@@ -1,55 +1,64 @@
-# AI Diagnosis System - Railway Deploy Guide
+# AI Diagnosis System
 
-Bu loyiha uchun backend `FastAPI` qilib deployga tayyorlandi.
+Frontend Netlify uchun, backend Render uchun tayyorlangan.
 
-## Nimalar tayyorlandi
+## Backend endpoints
 
-- `backend/app/main.py` - to'liq API:
-  - `POST /api/v1/auth/register`
-  - `POST /api/v1/auth/login`
-  - `GET /api/v1/auth/me`
-  - `POST /api/v1/diagnosis/analyze`
-  - `GET /api/v1/history`
-  - `POST /api/v1/history`
-  - `DELETE /api/v1/history/{id}`
-  - `GET /api/v1/history/stats`
-  - `GET /api/v1/admin/users`
-  - `PATCH /api/v1/admin/users/{id}/role`
-  - `DELETE /api/v1/admin/users/{id}`
-  - `GET /api/v1/admin/stats`
-  - `GET /api/v1/admin/diagnoses`
-- `backend/requirements.txt` - kerakli paketlar qo'shildi.
-- `backend/.env.example` - env namuna.
-- `Dockerfile` (root) - Railway rootdan to'g'ridan-to'g'ri backendni ko'taradi.
-- `backend/Dockerfile` - backend alohida deploy uchun ham tayyor.
+- `POST /api/v1/auth/register`
+- `POST /api/v1/auth/login`
+- `GET /api/v1/auth/me`
+- `POST /api/v1/diagnosis/analyze`
+- `GET /api/v1/history`
+- `POST /api/v1/history`
+- `DELETE /api/v1/history/{id}`
+- `GET /api/v1/history/stats`
+- `GET /api/v1/admin/users`
+- `PATCH /api/v1/admin/users/{id}/role`
+- `DELETE /api/v1/admin/users/{id}`
+- `GET /api/v1/admin/stats`
+- `GET /api/v1/admin/diagnoses`
 
-Default admin:
+## Render ga backend deploy
 
-- Email: `admin@medai.uz`
-- Parol: `admin123`
+### Variant A (eng oson)
+Repo ichida `render.yaml` bor. Render Blueprint ishlatsangiz avtomatik sozlanadi.
 
-## Railway ga qo'yish
+1. Render -> **New +** -> **Blueprint**
+2. GitHub repo ni tanlang
+3. `render.yaml` dagi service yaratiladi
+4. `ADMIN_EMAIL` va `ADMIN_PASSWORD` ni Render dashboardda qo'lda kiriting
+5. Deploy qiling
 
-1. Repository ni GitHub ga push qiling.
-2. Railway da **New Project -> Deploy from GitHub repo** ni tanlang.
-3. Repo tanlang, Railway avtomatik rootdagi `Dockerfile` bilan build qiladi.
-4. `Variables` bo'limida quyidagilarni kiriting:
-   - `JWT_SECRET=uzun-maxfiy-kalit`
+### Variant B (qo'lda Web Service)
+
+1. Render -> **New +** -> **Web Service**
+2. Repo ni tanlang
+3. Sozlamalar:
+   - Root Directory: `backend`
+   - Build Command: `pip install -r requirements.txt`
+   - Start Command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+4. Environment variables kiriting:
+   - `APP_NAME=AI Diagnosis API`
+   - `JWT_SECRET=<juda-uzun-maxfiy-kalit>`
    - `ACCESS_TOKEN_EXPIRE_HOURS=24`
-   - `CORS_ORIGINS=*` (yoki frontend domainingiz)
-5. Deploy tugagach URL olasiz, masalan:
-   - `https://your-api.up.railway.app`
+   - `DATABASE_URL=sqlite:///./medai.db` (demo uchun)
+   - `CORS_ORIGINS=https://<your-netlify-site>.netlify.app`
+   - `ADMIN_FULL_NAME=<ismingiz>`
+   - `ADMIN_EMAIL=<admin-email>`
+   - `ADMIN_PASSWORD=<admin-parol>`
+5. Health check: `/health`
 
-Health check:
+## Netlify frontend env
 
-- `GET https://your-api.up.railway.app/health`
+Netlify -> Site settings -> Environment variables:
 
-## Frontend ulash
-
-Frontend deploy qilingan joyda env kiriting:
-
-- `VITE_API_URL=https://your-api.up.railway.app/api/v1`
+- `VITE_API_URL=https://<your-render-service>.onrender.com/api/v1`
 - `VITE_DEMO=false`
 
-Shundan keyin frontend backendga ulanadi.
-# ai_diagnosis_system
+Keyin Netlify’da **Redeploy** qiling.
+
+## Muhim eslatma
+
+- `CORS_ORIGINS` ni productionda `*` qilmang, Netlify domeningizni yozing.
+- `JWT_SECRET` va `ADMIN_PASSWORD` kuchli bo'lsin.
+- Agar Render free plan ishlatsangiz, birinchi so'rovda backend "uyqudan uyg'onishi" mumkin.
