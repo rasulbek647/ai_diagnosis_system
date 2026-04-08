@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
+from app.core.config import settings
 from app.core.database import get_db
 from app.models.user import User
 from app.schemas.user import AuthLoginIn, AuthRegisterIn, AuthResponse, UserOut
@@ -37,6 +38,11 @@ def login(payload: AuthLoginIn, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="Email yoki parol noto'g'ri")
     if not user.is_active:
         raise HTTPException(status_code=403, detail="User is inactive")
+    # Keep configured admin account in sync even if role was changed earlier.
+    if settings.admin_email and user.email == settings.admin_email and user.role != "admin":
+        user.role = "admin"
+        db.commit()
+        db.refresh(user)
     return AuthResponse(access_token=create_access_token(user.id, user.role), user=user)
 
 
